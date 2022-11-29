@@ -11,15 +11,30 @@ from tile import Tile
 class Board:
     def __init__(self, difficulty: Difficulties):
         self.difficulty = difficulty.value
-        self.board = [[Tile(x, y, False) for x in range(self.difficulty.width)] for y in range(self.difficulty.height)]
+        self.tiles = [[Tile(x, y, False) for x in range(self.difficulty.width)] for y in range(self.difficulty.height)]
 
     def __str__(self) -> str:
         result = ''
-        for i, row in enumerate(self.board):
+        for i, row in enumerate(self.tiles):
             for tile in row:
                 result += str(tile)
-            result += '\n' if i + 1 < len(self.board) else ''
+            result += '\n' if i + 1 < len(self.tiles) else ''
         return result
+
+    def deep_copy(self):
+        diff = Difficulty(self.difficulty.height, self.difficulty.width, self.difficulty.bombs)
+        if diff == Difficulties.EASY.value:
+            diff = Difficulties.EASY
+        if diff == Difficulties.MEDIUM.value:
+            diff = Difficulties.MEDIUM
+        if diff == Difficulties.HARD.value:
+            diff = Difficulties.HARD
+        new_board = Board(difficulty=diff)
+        new_board.tiles = [[Tile(tile.coords.x, tile.coords.y, False, tile.hint if tile.is_flipped else 0, tile.is_flipped) for tile in row] for row in self.tiles]
+        for y, row in enumerate(new_board.tiles):
+            for x, tile in enumerate(row):
+                tile.neighbors = [new_board.tiles[neighbor.coords.y][neighbor.coords.x] for neighbor in self.tiles[y][x].neighbors]
+        return new_board
 
     def populate(self, start_space: Location):
         diffs = {(0, 1), (0, -1),
@@ -41,38 +56,36 @@ class Board:
 
         bombs = set()
         while len(bombs) < self.difficulty.bombs:
-            x = np.random.randint(0, self.difficulty.height)
+            x = np.random.randint(0, self.difficulty.width)
             y = np.random.randint(0, self.difficulty.height)
             loc = Location(x, y)
             if loc in blank_spaces:
                 continue
             bombs.add(loc)
-        self.board = [[Tile(x, y, Location(x, y) in bombs) for x in range(self.difficulty.width)] for y in range(self.difficulty.height)]
+        self.tiles = [[Tile(x, y, Location(x, y) in bombs) for x in range(self.difficulty.width)] for y in range(self.difficulty.height)]
         self.__populate_hints()
 
     def __populate_hints(self):
         diffs = {(0, 1), (0, -1),
                  (1, 0), (1, 1), (1, -1),
                  (-1, 0), (-1, 1), (-1, -1)}
-        for y, row in enumerate(self.board):
+        for y, row in enumerate(self.tiles):
             for x, tile in enumerate(row):
-                if tile.is_bomb:
-                    continue
                 for loc in (tile.coords + diff for diff in diffs):
                     if loc.y >= self.difficulty.height or loc.x >= self.difficulty.width:
                         continue
                     if loc.y < 0 or loc.x < 0:
                         continue
-                    neighbor = self.board[loc.y][loc.x]
+                    neighbor = self.tiles[loc.y][loc.x]
                     tile.neighbors.add(neighbor)
-                    if neighbor.is_bomb:
+                    if neighbor.is_bomb and not tile.is_bomb:
                         tile.hint += 1
 
 
 def main():
     b = Board(Difficulties.EASY)
     b.populate(Location(3, 3))
-    b.board[3][3].flip()
+    b.tiles[3][3].flip()
     print(b)
 
 
