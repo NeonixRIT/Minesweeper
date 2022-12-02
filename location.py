@@ -17,7 +17,7 @@ class Location:
             x = self.x + other[0]
             y = self.y + other[1]
             return Location(x, y)
-        raise NotImplemeneted("")
+        raise ValueError("")
 
     def __sub__(self, other):
         if isinstance(other, Location):
@@ -26,7 +26,7 @@ class Location:
         elif isinstance(other, Iterable) and len(other) == 2:
             distance = (((other[0] - self.x) ** 2) + ((other[1] - self.y) ** 2)) ** 0.5
             return distance
-        raise NotImplemeneted("")
+        raise ValueError("")
 
     def __hash__(self):
         return hash(f'({self.x}, {self.y})')
@@ -35,3 +35,6 @@ class Location:
         if isinstance(other, type(self)):
             return self.x == other.x and self.y == other.y
         return False
+
+    def __lt__(self, other):
+        return self.x + self.y < other.x + other.y

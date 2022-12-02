@@ -1,12 +1,11 @@
 import numpy as np
 
-from itertools import permutations
-
 import difficulties
 from difficulties import Difficulties
 from difficulty import Difficulty
 from location import Location
 from tile import Tile
+
 
 class Board:
     def __init__(self, difficulty: Difficulties):
@@ -21,7 +20,17 @@ class Board:
             result += '\n' if i + 1 < len(self.tiles) else ''
         return result
 
-    def deep_copy(self):
+    def flip_all_tiles(self):
+        for row in self.tiles:
+            for tile in row:
+                tile.is_flipped = True
+
+    def reveal_bombs(self):
+        for row in self.tiles:
+            for tile in row:
+                tile.is_flipped = tile.is_bomb or tile.is_flipped
+
+    def copy(self):
         diff = Difficulty(self.difficulty.height, self.difficulty.width, self.difficulty.bombs)
         if diff == Difficulties.EASY.value:
             diff = Difficulties.EASY
@@ -43,7 +52,7 @@ class Board:
 
         blank_spaces = [start_space]
         iter_blank_spaces = [start_space]
-        for _ in range(np.random.randint(0, (self.difficulty.height * self.difficulty.width) // 3 + 5)):
+        for _ in range(np.random.randint(5, (self.difficulty.height * self.difficulty.width) // 4)):
             space = iter_blank_spaces[-1]
             for loc in [space + diff for diff in diffs]:
                 is_blank = np.random.randint(0, 20) == 3
